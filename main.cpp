@@ -1,25 +1,21 @@
 #include <iostream>
 #include <vector>
 #include <queue>
-#include <set>
 #include <climits>
-#include <algorithm>
-
-using namespace std;
 
 struct Edge
 {
-  int to, year, time, cost;
+  long int to, year, time, cost;
 };
 
 struct Graph
 {
-  int n;
-  vector<vector<Edge>> adj;
+  long int n;
+  std::vector<std::vector<Edge>> adj;
 
-  Graph(int n) : n(n), adj(n) {}
+  Graph(long int n) : n(n), adj(n) {}
 
-  void addEdge(int from, int to, int year, int time, int cost)
+  void addEdge(long int from, long int to, long int year, long int time, long int cost)
   {
     adj[from].push_back({to, year, time, cost});
     adj[to].push_back({from, year, time, cost});
@@ -28,7 +24,7 @@ struct Graph
 
 struct Node
 {
-  int village, year, time, cost;
+  long int village, year, time, cost;
 
   bool operator>(const Node &other) const
   {
@@ -41,11 +37,11 @@ struct Node
   }
 };
 
-vector<int> dijkstra(const Graph &graph, int source)
+std::vector<long int> dijkstra(const Graph &graph, long int source)
 {
-  vector<int> distance(graph.n, INT_MAX);
-  vector<bool> visited(graph.n, false);
-  priority_queue<Node, vector<Node>, greater<Node>> pq;
+  std::vector<long int> distance(graph.n, INT_MAX);
+  std::vector<bool> visited(graph.n, false);
+  std::priority_queue<Node, std::vector<Node>, std::greater<Node>> pq;
 
   distance[source] = 0;
   pq.push({source, 0, 0, 0});
@@ -64,8 +60,8 @@ vector<int> dijkstra(const Graph &graph, int source)
 
     for (const Edge &edge : graph.adj[node.village])
     {
-      int new_time = node.time + edge.time;
-      int new_cost = node.cost + edge.cost;
+      long int new_time = node.time + edge.time;
+      long int new_cost = node.cost + edge.cost;
 
       if (new_time < distance[edge.to] || (new_time == distance[edge.to] && new_cost < distance[edge.to]))
       {
@@ -78,11 +74,10 @@ vector<int> dijkstra(const Graph &graph, int source)
   return distance;
 }
 
-int prim(const Graph &graph)
+void primMinimumPathandCost(const Graph &graph, long int &minimum_path_stability_time, long int &spanning_tree_cost)
 {
-  int total_cost = 0;
-  priority_queue<Node, vector<Node>, greater<Node>> pq;
-  vector<bool> in_tree(graph.n, false);
+  std::priority_queue<Node, std::vector<Node>, std::greater<Node>> pq;
+  std::vector<bool> in_tree(graph.n, false);
 
   pq.push({0, 0, 0, 0});
 
@@ -91,7 +86,7 @@ int prim(const Graph &graph)
     Node node = pq.top();
     pq.pop();
 
-    int village = node.village;
+    long int village = node.village;
 
     if (in_tree[village])
     {
@@ -99,7 +94,12 @@ int prim(const Graph &graph)
     }
 
     in_tree[village] = true;
-    total_cost += node.cost;
+    spanning_tree_cost += node.cost;
+
+    if (node.year > minimum_path_stability_time)
+    {
+      minimum_path_stability_time = node.year;
+    }
 
     for (const Edge &edge : graph.adj[village])
     {
@@ -109,42 +109,69 @@ int prim(const Graph &graph)
       }
     }
   }
+}
 
-  return total_cost;
+void bfsFirstConnection(const Graph &graph, long int &first_connection_time)
+{
+  std::vector<bool> visited(graph.n, false);
+  std::queue<int> q;
+
+  q.push(0);
+  visited[0] = true;
+
+  while (!q.empty())
+  {
+    long int village = q.front();
+    q.pop();
+
+    for (const Edge &edge : graph.adj[village])
+    {
+      if (!visited[edge.to])
+      {
+        visited[edge.to] = true;
+
+        if (edge.year > first_connection_time)
+        {
+          first_connection_time = edge.year;
+        }
+
+        q.push(edge.to);
+      }
+    }
+  }
 }
 
 int main()
 {
-  int n, m;
-  cin >> n >> m;
+  long int n, m;
+  std::scanf("%ld %ld", &n, &m);
 
   Graph graph(n);
 
   for (int i = 0; i < m; i++)
   {
-    int u, v, a, l, c;
-    cin >> u >> v >> a >> l >> c;
+    long int u, v, a, l, c;
+    std::scanf("%ld %ld %ld %ld %ld", &u, &v, &a, &l, &c);
     graph.addEdge(u - 1, v - 1, a, l, c);
   }
 
-  vector<int> distances = dijkstra(graph, 0);
+  std::vector<long int> distances = dijkstra(graph, 0);
 
   for (int i = 0; i < n; i++)
   {
-    cout << distances[i] << endl;
+    std::cout << distances[i] << std::endl;
   }
 
-  int first_year_achievable_distances = 0;
+  long int minimum_path_stability_time = 0;
+  long int first_connection_time = 0;
+  long int spanning_tree_cost = 0;
 
-  int first_year_arrive_any = 0;
+  primMinimumPathandCost(graph, minimum_path_stability_time, spanning_tree_cost);
+  bfsFirstConnection(graph, first_connection_time);
 
-  int lower_cost = prim(graph);
-
-  cout << first_year_achievable_distances << endl;
-
-  cout << first_year_arrive_any << endl;
-
-  cout << lower_cost << endl;
+  std::cout << minimum_path_stability_time << std::endl;
+  std::cout << first_connection_time << std::endl;
+  std::cout << spanning_tree_cost << std::endl;
 
   return 0;
 }
